@@ -28,8 +28,8 @@ static int ECCopen(struct inode *inode, struct file *file) {
    return 0;
 }
 
-static char g_s_Hello_World_string[256] = "hola mundooooo\n";
-static ssize_t g_s_Hello_World_size = sizeof(g_s_Hello_World_string);
+static char g_s_Hello_World_string[256] = "";
+static int g_s_Hello_World_size = 256;
 
 static ssize_t ECCread(struct file *file, char __user *buffer, size_t count, loff_t *f_pos) {
    printk(KERN_NOTICE "ECCread: Device file is read at offset = %i, read bytes count = %u", 
@@ -37,33 +37,33 @@ static ssize_t ECCread(struct file *file, char __user *buffer, size_t count, lof
    (unsigned int)count);
 
    if(*f_pos >= g_s_Hello_World_size)
-      return 0;
-   
+      return 0; /* Cuando ya se ha leído todo el buffer, se devuelve un 0 para indicar al Kernel que no hay datos que leer. */
+
    if(*f_pos + count > g_s_Hello_World_size)
       count = g_s_Hello_World_size - *f_pos;
    
-   if(copy_to_user(buffer, g_s_Hello_World_string, g_s_Hello_World_size) < 0)
+   if(copy_to_user(buffer, g_s_Hello_World_string + *f_pos, count) < 0)
       return -EFAULT;
 
    *f_pos += count;
 
-   return count;
+   return count; /* Se notifica al Kernel del número de bytes que se han leído. */
 }
 
 static ssize_t ECCwrite(struct file *file, const char __user *buffer, size_t count, loff_t *f_pos) {
    pr_info("ECCwrite");
-   int i;
-
-   if(sizeof(buffer))
-      for(i = 0; i < sizeof(g_s_Hello_World_string); i++)
-         g_s_Hello_World_string[i] = NULL;
 
    if(copy_from_user(g_s_Hello_World_string, buffer, count)){
+      pr_info("ECCwrite failed!");
       return -EINVAL;
    }
 
+   g_s_Hello_World_string[count] = 0;
    
-   g_s_Hello_World_size = sizeof(g_s_Hello_World_string);
+   pr_info("ECCwrite2 %s", g_s_Hello_World_string);
+
+   g_s_Hello_World_size = count;
+
    return count;
 }
 
