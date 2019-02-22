@@ -144,7 +144,6 @@ static int __init init_driver(void){
         driverClass->dev_uevent = driver_dev_uevent;
 
     pr_info("/sys/class/%s class driver registered\n", DRIVER_CLASS);
-    return 0;
 
     for(n_device = 0; n_device < NUM_DEVICES; n_device++){
         cdev_init(&(DriverMiguelcdev[n_device]), devlist[n_device].fops);
@@ -164,7 +163,8 @@ static int __init init_driver(void){
     }
 
     pr_info("DriverMiguel initialized and loaded.");
-
+    return 0;
+    
     error:
         if(driverClass)
             class_destroy(driverClass);
