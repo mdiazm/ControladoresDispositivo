@@ -9,7 +9,7 @@ Actualmente, se consigue transferir una cadena de 256 bytes (tamaño fijado por 
 Finalmente van a implementarse tres drivers: 
 Clase: DriverMiguelClass
 
-> led: servirá para encender o apagar los LEDs del teclado mediante argumentos.
-> fibonacci: podremos obtener una sucesión de fibonacci de tantos números como se especifiquen mediante parámetro (el número de bytes a leer indicará cuantos números queremos.)
-> save: espacio de almacenamiento de 64K simulando un disco duro de los años 80 (en cuanto a tamaño).
+- [ ] **led**: servirá para encender o apagar los LEDs del teclado mediante argumentos. <br/>
+- [ ] **fibonacci**: podremos obtener una sucesión de fibonacci de tantos números como se especifiquen mediante parámetro (el número de bytes a leer indicará cuantos números queremos.)
+- [ ] **save**: espacio de almacenamiento de 64K simulando un disco duro de los años 80 (en cuanto a tamaño).
 
