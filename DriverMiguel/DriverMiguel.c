@@ -23,6 +23,8 @@
 #define DRIVER_CLASS "DriverMiguelClass"
 #define NUM_DEVICES 3
 #define MEMORY_SIZE 65536
+#define KB_DATA 0x60
+#define LED_CMD 0xED
 
 static dev_t major_minor = -1;
 static int num_open = 0;
@@ -47,12 +49,38 @@ static int release(struct inode *inode, struct file * file){
 /********************* LED *************************/
 static ssize_t led_read(struct file *file, char __user *buffer, size_t count, loff_t *f_pos){
 
-    return -EFAULT;
+    return 0;
 }
 
-static ssize_t led_write(struct file *file, char __user *buffer, size_t count, loff_t *f_pos){
-    
-    return -EINVAL;
+static int kb_ready_for_input(void){
+    int reps = 1000000, status;
+
+    do 
+    {
+        status = inb(0x64);
+    } while((status & 2) && reps--);
+
+    return (reps != 0);
+}
+
+static ssize_t led_write(struct file *file, const char __user *buffer, size_t count, loff_t *f_pos){
+
+    char data[64];
+
+    if(copy_from_user(data, buffer, count))
+        return -EINVAL;
+
+    int led = data[0] & 0x07; /* Mask the rest of the bits. */
+
+    if(!kb_ready_for_input()) return -EBUSY;
+
+    outb(LED_CMD, KB_DATA); /* Send Led-write command*/
+
+    if(!kb_ready_for_input()) return -EBUSY;
+
+    outb(led, KB_DATA);
+
+    return count;
 }
 
 /********************** FIBONACCI ************************/
@@ -61,8 +89,8 @@ static ssize_t fibonacci_read(struct file *file, char __user *buffer, size_t cou
     return -EFAULT;
 }
 
-static ssize_t fibonacci_write(struct file *file, char __user *buffer, size_t count, loff_t *f_pos){
-    return -EINVAL;
+static ssize_t fibonacci_write(struct file *file, char const __user *buffer, size_t count, loff_t *f_pos){
+    return 0;
 }
 
 /********************* SAVE *************************/
@@ -71,7 +99,7 @@ static ssize_t save_read(struct file *file, char __user *buffer, size_t count, l
     return -EFAULT;
 }
 
-static ssize_t save_write(struct file *file, char __user *buffer, size_t count, loff_t *f_pos){
+static ssize_t save_write(struct file *file, char const __user *buffer, size_t count, loff_t *f_pos){
     
     return -EINVAL;
 }
@@ -82,7 +110,7 @@ static const struct file_operations led_fops = {
     .owner = THIS_MODULE,
     .open = open,
     .read = led_read,
-    /*.write = led_write,*/
+    .write = led_write,
     .release = release
 };
 
@@ -90,7 +118,7 @@ static const struct file_operations fibonacci_fops = {
     .owner = THIS_MODULE,
     .open = open,
     .read = fibonacci_read,
-    /*.write = fibonacci_write,*/
+    .write = fibonacci_write,
     .release = release
 };
 
@@ -98,7 +126,7 @@ static const struct file_operations save_fops = {
     .owner = THIS_MODULE,
     .open = open,
     .read = save_read,
-    /*.write = save_write,*/
+    .write = save_write,
     .release = release
 };
 
