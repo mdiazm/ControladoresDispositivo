@@ -107,13 +107,31 @@ static ssize_t fibonacci_read(struct file *file, char __user *buffer, size_t cou
     return -EFAULT;
 }
 
+static int pow(int base, int exp){
+    int sum = 0, i;
+
+    for(i = 0; i < exp; i++){
+        sum += base*base;
+    }
+
+    return sum;
+}
+
 static ssize_t fibonacci_write(struct file *file, char const __user *buffer, size_t count, loff_t *f_pos){  
     char data[64];
+    int i;
 
     if(copy_from_user(data, buffer, count)) /* Get how many numbers are going to be read. */
         return -EINVAL;
     
+    int digits = count - 1;
 
+    int number = 0;
+
+    for(i = digits; i >= 0; i--)
+        number += data[i]*pow(10, digits - i);
+
+    pr_info("Number %i", number);
 
     return 0;
 }
