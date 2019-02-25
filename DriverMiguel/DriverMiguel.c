@@ -29,11 +29,28 @@
 static dev_t major_minor = -1;
 static int num_open = 0;
 static struct class *driverClass = NULL;
+static struct device_data {
+    const char name[64];
+    char data[MEMORY_SIZE];
+    int data_size;
+} dev_names[NUM_DEVICES] = {
+    [0] = {"led", "", 0},
+    [1] = {"fibonacci", "", 0},
+    [2] = {"save", "", 0}
+};
+
+int minor;
 
 /* Definition of the methods for all devices. */
 static int open(struct inode *inode, struct file * file) {
     num_open++;
     pr_info("DriverMiguel has been opened %i times", num_open);
+
+    minor = iminor(inode);
+
+    file->private_data = &minor;
+
+    pr_info("The device opened has been /dev/%s", dev_names[minor].name);
 
     return 0;
 }
@@ -70,7 +87,8 @@ static ssize_t led_write(struct file *file, const char __user *buffer, size_t co
     if(copy_from_user(data, buffer, count))
         return -EINVAL;
 
-    int led = data[0] & 0x07; /* Mask the rest of the bits. */
+    int led;
+    led = data[0] & 0x07; /* Mask the rest of the bits. */
 
     if(!kb_ready_for_input()) return -EBUSY;
 
@@ -89,19 +107,43 @@ static ssize_t fibonacci_read(struct file *file, char __user *buffer, size_t cou
     return -EFAULT;
 }
 
-static ssize_t fibonacci_write(struct file *file, char const __user *buffer, size_t count, loff_t *f_pos){
+static ssize_t fibonacci_write(struct file *file, char const __user *buffer, size_t count, loff_t *f_pos){  
+    char data[64];
+
+    if(copy_from_user(data, buffer, count)) /* Get how many numbers are going to be read. */
+        return -EINVAL;
+    
+
+
     return 0;
 }
 
 /********************* SAVE *************************/
 static ssize_t save_read(struct file *file, char __user *buffer, size_t count, loff_t *f_pos){
 
-    return -EFAULT;
+    if(*f_pos >= dev_names[2].data_size)
+        return 0;
+
+    if(*f_pos + count > dev_names[2].data_size)
+        count = dev_names[2].data_size - *f_pos;
+
+    if(copy_to_user(buffer, dev_names[2].data, count))
+        return -EFAULT; 
+
+    *f_pos += count;
+
+    return count;
 }
 
 static ssize_t save_write(struct file *file, char const __user *buffer, size_t count, loff_t *f_pos){
     
-    return -EINVAL;
+    if(copy_from_user(dev_names[2].data, buffer, count))
+        return -EINVAL;
+
+    dev_names[2].data[count] = 0;
+    dev_names[2].data_size = count;
+
+    return count;
 }
 
 /* Definition of the file_operations table for each device. */
@@ -135,12 +177,10 @@ static struct cdev DriverMiguelcdev[NUM_DEVICES];
 static struct drivers {
     const char *name;
     const struct file_operations *fops;
-    char data[MEMORY_SIZE];
-    int data_size;
 } devlist[NUM_DEVICES] = {
-    [0] = {"led", &led_fops, "", 0},
-    [1] = {"fibonacci", &fibonacci_fops, "", 0},
-    [2] = {"save", &save_fops, "", 0}
+    [0] = {"led", &led_fops},
+    [1] = {"fibonacci", &fibonacci_fops},
+    [2] = {"save", &save_fops}
 };
 
 /********************** Initialization of the controller *******************************/
