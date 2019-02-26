@@ -103,37 +103,84 @@ static ssize_t led_write(struct file *file, const char __user *buffer, size_t co
 
 /********************** FIBONACCI ************************/
 static ssize_t fibonacci_read(struct file *file, char __user *buffer, size_t count, loff_t *f_pos){
+    if(*f_pos >= dev_names[1].data_size)
+            return 0;
 
-    return -EFAULT;
+    if(*f_pos + count > dev_names[1].data_size)
+        count = dev_names[1].data_size - *f_pos;
+
+    if(copy_to_user(buffer, dev_names[1].data, count))
+        return -EFAULT; 
+
+    *f_pos += count;
+
+    return count;
 }
 
-static int pow(int base, int exp){
-    int sum = 0, i;
+static int pow(int base, int _exp){
+    int sum = 1, i;
 
-    for(i = 0; i < exp; i++){
-        sum += base*base;
+    for(i = 0; i < _exp; i++){
+        sum *= base;
     }
 
     return sum;
 }
 
+static int count_diviter(int n){
+    int r = 1;
+    while(n > 9){
+        n /= 10;
+        r++;
+    }
+
+    return r;
+}
+
 static ssize_t fibonacci_write(struct file *file, char const __user *buffer, size_t count, loff_t *f_pos){  
     char data[64];
     int i;
+    int fib[2048];
 
-    if(copy_from_user(data, buffer, count)) /* Get how many numbers are going to be read. */
+    if(copy_from_user(data, buffer, count)) 
         return -EINVAL;
     
     int digits = count - 1;
 
     int number = 0;
 
-    for(i = digits; i >= 0; i--)
-        number += data[i]*pow(10, digits - i);
+    for(i = digits - 1; i >= 0; i--)
+        number += (data[i] - '0')*pow(10, digits - i - 1);
 
-    pr_info("Number %i", number);
+    if(number <= 0)
+        return 0;
 
-    return 0;
+    fib[0] = fib[1] = 1;
+
+    for(i = 2; i <= number; i++){
+        fib[i] = fib[i-1] + fib[i-2];
+    }
+    
+    pr_info("Fibonacci: %i", fib[number-1]);
+
+    int pos = 0;
+    char tmp[32];
+    digits = 1;
+    dev_names[1].data_size = 0;
+
+    for(i = 0; i < number; i++){
+        sprintf(tmp, "%d", fib[i]);
+        digits = count_diviter(fib[i]);
+        memcpy(dev_names[1].data + pos, tmp, digits);
+        pos += digits + 1;
+        dev_names[1].data[pos] = ' ';
+        pos += 1;
+        dev_names[1].data_size += pos;
+    }
+
+    dev_names[1].data[pos] = 0;
+
+    return count;
 }
 
 /********************* SAVE *************************/

@@ -10,6 +10,6 @@ Finalmente van a implementarse tres drivers:
 Clase: DriverMiguelClass
 
 - [x] **led**: servirá para encender o apagar los LEDs del teclado mediante argumentos. <br/>
-- [ ] **fibonacci**: podremos obtener una sucesión de fibonacci de tantos números como se especifiquen mediante parámetro (el número de bytes a leer indicará cuantos números queremos.)
+- [x] **fibonacci**: podremos obtener una sucesión de fibonacci de tantos números como se especifiquen mediante parámetro (el número de bytes a leer indicará cuantos números queremos.)
 - [x] **save**: espacio de almacenamiento de 64K simulando un disco duro de los años 80 (en cuanto a tamaño).
 
