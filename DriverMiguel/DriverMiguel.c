@@ -175,7 +175,7 @@ static ssize_t fibonacci_write(struct file *file, char const __user *buffer, siz
         pos += digits + 1;
         dev_names[1].data[pos] = ' ';
         pos += 1;
-        dev_names[1].data_size += pos;
+        dev_names[1].data_size = pos;
     }
 
     dev_names[1].data[pos] = 0;
